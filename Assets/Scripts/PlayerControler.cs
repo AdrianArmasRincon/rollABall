@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // Add this for Text
+using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement; // Add this for SceneManager
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,10 +12,11 @@ public class PlayerController : MonoBehaviour
     private int count;
     private float movementX;
     private float movementY;
-    public float speed = 0;
+    public float speed = 5.0f; // Set a default speed
     public float jumpForce = 5.0f;
     public TextMeshProUGUI countText;
     public GameObject winTextObject;
+    private bool isGrounded;
 
     void Start()
     {
@@ -23,6 +24,15 @@ public class PlayerController : MonoBehaviour
         count = 0;
         SetCountText();
         winTextObject.SetActive(false);
+    }
+
+    void OnJump()
+    {
+        if (isGrounded)
+        {
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            isGrounded = false;
+        }
     }
 
     void OnMove(InputValue movementValue)
@@ -35,13 +45,9 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 movement = new Vector3(movementX, 0.0f, movementY);
-        rb.AddForce(movement * speed);
+        rb.AddForce(movement * speed * 12.0f * Time.deltaTime);
 
         // Jump
-        if (IsGrounded() && Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
 
         // Check if the player is below the map
         if (transform.position.y < 0)
@@ -49,6 +55,12 @@ public class PlayerController : MonoBehaviour
             // Reset the player's position to (0, 0, 0)
             transform.position = new Vector3(0, 0, 0);
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+            isGrounded = true;
     }
 
     void OnTriggerEnter(Collider other)
@@ -63,14 +75,17 @@ public class PlayerController : MonoBehaviour
 
     void SetCountText()
     {
-        countText.text = "Count: " + count.ToString();
-
-        if (count >= 10)
+        if (countText != null)
         {
-            winTextObject.SetActive(true);
+            countText.text = "Count: " + count.ToString();
 
-            // Call the LoadMainMenuDelayed function after 5 seconds
-            Invoke("LoadMainMenuDelayed", 5f);
+            if (count >= 10)
+            {
+                winTextObject.SetActive(true);
+
+                // Call the LoadMainMenuDelayed function after 5 seconds
+                Invoke("LoadMainMenuDelayed", 4f);
+            }
         }
     }
 
@@ -78,12 +93,5 @@ public class PlayerController : MonoBehaviour
     {
         // Switch to the MainMenu scene
         SceneManager.LoadScene("MainMenu");
-    }
-
-    bool IsGrounded()
-    {
-        // Implement your ground check method here (e.g., raycast or other appropriate method).
-        // Return true if grounded, false otherwise.
-        return true; // Placeholder; replace this with your actual ground check.
     }
 }
